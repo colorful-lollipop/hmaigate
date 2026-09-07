@@ -33,7 +33,6 @@ AIGate 是一个运行在 **HarmonyOS `2in1`（PC）设备**上的本地 LLM API
 - `AppScope/app.json5` — bundleName `com.huawei.myapplication`。
 - `entry/src/main/module.json5` — `deviceTypes: ["2in1"]`；权限 `INTERNET`、`FILE_ACCESS_PERSIST`；`supportWindowMode: ["fullscreen","split","floating"]`（沉浸式标题栏依赖 floating 模式）。
 - `entry/src/main/cpp/CMakeLists.txt` — 构建 `libentry.so`：NAPI + 代理核心 + mongoose.c + mbedtls 静态库；宏 `MG_TLS=MG_TLS_MBED`、`MG_ENABLE_LOG=0`；链接 `pthread`；`-I third_party` 使头文件以 `mongoose/mongoose.h` 形式包含（**不是**裸 `mongoose.h`）。
-- `aigate.conf`（根）— **仅为配置模板**，运行时默认不读取（运行时配置在应用内，走 preferences）。
 - `code-linter.json5` — ArkTS lint（`@performance/recommended` + `@typescript-eslint/recommended` + 一组 `@security/*` 加密规则），忽略 test/ohosTest/mock。
 - `.clangd` / `.clang-tidy` — C++ 静态检查配置。
 - `local.properties` — DevEco SDK 路径（已 gitignore，自动生成勿改）。
@@ -159,7 +158,7 @@ bash entry/src/main/cpp/tests/run_host_tests.sh
 
 ## 文档可信度警告
 
-`README.md` / `docs/ARCHITECTURE.md` / `docs/DEVELOPMENT.md` / `docs/BACKGROUND.md` 已**重写为与实现一致**，可以信任。仍需注意：`third_party/mongoose/README.md` 里写的 `MG_TLS_BUILTIN` 已过时（实际是 `MG_TLS_MBED`）；`aigate.conf` 仅为模板、运行时默认不读取。若文档与源码冲突，**以源码和本文件为准**。
+`README.md` / `docs/ARCHITECTURE.md` / `docs/DEVELOPMENT.md` / `docs/BACKGROUND.md` 已**重写为与实现一致**，可以信任。仍需注意：`third_party/mongoose/README.md` 里写的 `MG_TLS_BUILTIN` 已过时（实际是 `MG_TLS_MBED`）。若文档与源码冲突，**以源码和本文件为准**。
 
 ## 项目技能（`.agents/skills/`）
 

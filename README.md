@@ -72,6 +72,12 @@ UI（Index.ets，纯视图）
 [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md)，项目背景与设计动机见
 [docs/BACKGROUND.md](docs/BACKGROUND.md)。
 
+## 测试与 CI
+
+- **C++ 宿主单测**（URL 解析、鉴权头、转发管线、检测规则、协议识别、规则路由、响应流式扫描、插件加载、密码泄露审计，共 300+ 断言）：`bash entry/src/main/cpp/tests/run_host_tests.sh`，无需设备；
+- **CI**（GitHub Actions）在 windows-latest 上运行上述宿主测试；
+- ArkTS 层与设备侧功能（UI、托盘、本地配置接管、SSE 转发）目前依赖 DevEco Studio 手工构建验证，**不在 CI 覆盖范围内**（`entry/src/test/`、`entry/src/ohosTest/` 为 stub）。
+
 ## Roadmap
 
 - ~~动态库插件机制~~（M2 已落地：纯 C ABI + `dlopen`，见 `entry/src/main/cpp/include/aigate_plugin.h`）；~~响应侧检测插件接线~~（M4 已落地）；后续：transform 类插件接线

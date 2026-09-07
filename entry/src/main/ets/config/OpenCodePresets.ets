@@ -32,8 +32,8 @@ export const openCodeProviderPresets: ProviderPreset[] = [
   {
     name: 'Shengsuanyun',
     nameKey: 'providerForm.presets.shengsuanyun',
-    websiteUrl: 'https://www.shengsuanyun.com/?from=CH_4HHXMRYF',
-    apiKeyUrl: 'https://www.shengsuanyun.com/?from=CH_4HHXMRYF',
+    websiteUrl: 'https://www.shengsuanyun.com',
+    apiKeyUrl: 'https://www.shengsuanyun.com',
     // 端点复用 CodexPresets 的 Shengsuanyun OpenAI 兼容端点
     settingsConfigJson: mk({
       OPENAI_BASE_URL: 'https://router.shengsuanyun.com/api/v1',
@@ -42,13 +42,12 @@ export const openCodeProviderPresets: ProviderPreset[] = [
     }),
     category: 'aggregator',
     isPartner: true,
-    partnerPromotionKey: 'shengsuanyun',
     icon: 'shengsuanyun',
   },
   {
     name: 'PatewayAI',
     websiteUrl: 'https://pateway.ai',
-    apiKeyUrl: 'https://pateway.ai/?ch=etzpm8&aff=WB6M6F67#/',
+    apiKeyUrl: 'https://pateway.ai/#/',
     // 端点复用 CodexPresets 的 PatewayAI 端点
     settingsConfigJson: mk({
       OPENAI_BASE_URL: 'https://api.pateway.ai/v1',
@@ -58,13 +57,12 @@ export const openCodeProviderPresets: ProviderPreset[] = [
     category: 'third_party',
     endpointCandidates: ['https://api.pateway.ai/v1'],
     isPartner: true,
-    partnerPromotionKey: 'patewayai',
     icon: 'pateway',
   },
   {
     name: 'DouBaoSeed',
     websiteUrl: 'https://www.volcengine.com/product/doubao',
-    apiKeyUrl: 'https://console.volcengine.com/ark/region:ark+cn-beijing/apiKey?apikey=%7B%7D&utm_campaign=hw&utm_content=ccswitch&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=ccswitch',
+    apiKeyUrl: 'https://console.volcengine.com/ark/region:ark+cn-beijing/apiKey?apikey=%7B%7D',
     // 端点复用 CodexPresets 的火山方舟 OpenAI 兼容端点
     settingsConfigJson: mk({
       OPENAI_BASE_URL: 'https://ark.cn-beijing.volces.com/api/v3',
@@ -74,14 +72,13 @@ export const openCodeProviderPresets: ProviderPreset[] = [
     endpointCandidates: ['https://ark.cn-beijing.volces.com/api/v3'],
     category: 'cn_official',
     isPartner: true,
-    partnerPromotionKey: 'doubaoseed',
     icon: 'doubao',
     iconColor: '#3370FF',
   },
   {
     name: 'CCSub',
     websiteUrl: 'https://www.ccsub.net',
-    apiKeyUrl: 'https://www.ccsub.net/register?ref=Y6Z8DXEA',
+    apiKeyUrl: 'https://www.ccsub.net/register',
     // 端点复用 CodexPresets 的 CCSub 端点
     settingsConfigJson: mk({
       OPENAI_BASE_URL: 'https://www.ccsub.net/v1',
@@ -90,7 +87,6 @@ export const openCodeProviderPresets: ProviderPreset[] = [
     }),
     category: 'aggregator',
     isPartner: true,
-    partnerPromotionKey: 'ccsub',
     icon: 'ccsub',
   },
   {

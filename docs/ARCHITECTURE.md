@@ -45,8 +45,7 @@ AIGate 是 HarmonyOS 2in1（PC）上的本地 LLM API 转发网关，整体分�
   controller 是唯一组合这些件的地方，视图不直接触碰 service/repository。
 - Ability→页面传数据走 `AppStorage.setOrCreate` + `@StorageLink`。
 - **持久化唯一数据源是 ArkData preferences**（`SettingsRepository` / `ProviderRepository`，
-  静态单例，`EntryAbility.onCreate` 注入 context 初始化）。`aigate.conf` 仅是配置
-  模板，运行时默认不读取。
+  静态单例，`EntryAbility.onCreate` 注入 context 初始化）。
 - **多渠道管理**：`types/App.ets` 的 `CHANNEL_APPS` 定义 Claude Code / Codex /
   OpenCode 三渠道；活动渠道 `activeAppId` 持久化在 `SettingsRepository`，
   `setActiveApp` = 持久化 + 推该渠道当前供应商 + 重下发路由表。

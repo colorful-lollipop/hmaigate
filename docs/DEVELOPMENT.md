@@ -81,8 +81,7 @@ aigate/
 │       └── resources/
 ├── cloud/                     # 云端控制面（可选）：Spring Boot 后端 + React 控制台
 ├── docs/                      # 架构文档 / 开发指南 / 项目背景
-├── AGENTS.md                  # 唯一权威事实来源
-└── aigate.conf                # 配置模板（运行时默认不读取）
+└── AGENTS.md                  # 唯一权威事实来源
 ```
 
 ## 编码约定摘要

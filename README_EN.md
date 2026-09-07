@@ -73,6 +73,12 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for details,
 [docs/BACKGROUND.md](docs/BACKGROUND.md) for the project's background and design
 motivation.
 
+## Testing & CI
+
+- **C++ host unit tests** (URL parsing, auth headers, forwarding pipeline, detection rules, protocol recognition, rule routing, streaming response scan, plugin loading, password-leak audit — 300+ assertions): `bash entry/src/main/cpp/tests/run_host_tests.sh`, no device required;
+- **CI** (GitHub Actions) runs these host tests on windows-latest;
+- The ArkTS layer and on-device features (UI, tray, local config takeover, SSE forwarding) currently rely on manual builds in DevEco Studio and are **not covered by CI** (`entry/src/test/` and `entry/src/ohosTest/` are stubs).
+
 ## Roadmap
 
 - ~~Dynamic-library plugin mechanism~~ (landed in M2: pure C ABI + `dlopen`, see `entry/src/main/cpp/include/aigate_plugin.h`); ~~response-side detection plugin wiring~~ (landed in M4); next: wiring transform plugins

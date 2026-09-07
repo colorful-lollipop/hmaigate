@@ -41,7 +41,7 @@ export const claudeProviderPresets: ProviderPreset[] = [
   {
     name: 'Zhipu GLM',
     websiteUrl: 'https://open.bigmodel.cn',
-    apiKeyUrl: 'https://www.bigmodel.cn/claude-code?ic=RRVJPB5SII',
+    apiKeyUrl: 'https://www.bigmodel.cn/claude-code',
     settingsConfigJson: mk({
       ANTHROPIC_BASE_URL: 'https://open.bigmodel.cn/api/anthropic',
       ANTHROPIC_AUTH_TOKEN: '',
@@ -73,7 +73,7 @@ export const claudeProviderPresets: ProviderPreset[] = [
   },
   {
     name: 'Kimi',
-    websiteUrl: 'https://platform.kimi.com?aff=cc-switch',
+    websiteUrl: 'https://platform.kimi.com',
     settingsConfigJson: mk({
       ANTHROPIC_BASE_URL: 'https://api.moonshot.cn/anthropic',
       ANTHROPIC_AUTH_TOKEN: '',

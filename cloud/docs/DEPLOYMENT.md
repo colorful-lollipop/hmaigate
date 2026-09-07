@@ -18,9 +18,9 @@
 - Node.js 20+ 与 npm；
 - 生产环境必须提供 HTTPS 反向代理。
 
-本机已配置的 Maven 本地仓库为 `E:\repo\maven`，由
-`C:\Users\zhu\.m2\settings.xml` 的 `localRepository` 指定。若 Maven 在受限沙箱中
-报该目录权限错误，属于沙箱隔离；正常主机终端直接运行 Maven 即可使用该缓存。
+Maven 默认使用用户目录下 `~/.m2/settings.xml` 的 `localRepository` 指定的本地仓库
+缓存依赖。若 Maven 在受限沙箱中报该目录权限错误，属于沙箱隔离；正常主机终端直接
+运行 Maven 即可使用该缓存。
 
 ## 开发启动
 

@@ -52,8 +52,6 @@ export interface ProviderPreset {
   settingsConfigJson: string;
   isOfficial?: boolean;
   isPartner?: boolean;
-  primePartner?: boolean;
-  partnerPromotionKey?: string;
   category?: ProviderCategory;
   apiKeyField?: ClaudeApiKeyField;
   templateValues?: Record<string, TemplateValueConfig>;
@@ -102,7 +100,7 @@ export function presetToProvider(preset: ProviderPreset): Provider {
     settingsConfigJson: preset.settingsConfigJson,
     websiteUrl: preset.websiteUrl,
     category: preset.category,
-    isPartner: preset.isPartner ?? preset.primePartner,
+    isPartner: preset.isPartner,
     icon: preset.icon,
     iconColor: preset.iconColor,
   };
