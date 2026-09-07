@@ -1,7 +1,7 @@
 # AIGate 开发指南
 
-> 权威事实来源是根目录 `AGENTS.md`，本文是上手速查；细节（ArkTS 严格模式规则、
-> 平台踩坑速查等）一律以 AGENTS.md 为准。
+> 上手速查文档。根目录 `AGENTS.md` 是最小必读的唯一权威入口，架构细节见
+> `ARCHITECTURE.md`，平台踩坑见 `PITFALLS.md`，UI 规范见 `UI-GUIDELINES.md`。
 
 ## 环境
 
@@ -38,7 +38,7 @@ bash entry/src/main/cpp/tests/run_host_tests.sh
 - 用 MinGW `g++ -std=c++17` 编译 `upstream.cpp` / `request_pipeline.cpp` /
   `router.cpp` / `protocol_adapter.cpp` / `security_detector.cpp` /
   `response_scanner.cpp` / `plugin_manager.cpp` / `password_leak_audit.cpp` 及对应
-  测试到 `tests/.out/`（已 gitignore），只覆盖纯逻辑，不覆盖 mongoose/NAPI。
+  测试到 `tests/.out/`（已 gitignore），只覆盖纯逻辑，不覆盖 httplib 事件层/NAPI。
 - `run_host_tests.sh` 是表驱动（TESTS 数组：名字|源文件依赖|运行参数，新增测试只
   加一行）；插件测试会把 `fixture_plugin_ok/badver.cpp` 现场编译成 `.dll` 走真实
   `LoadLibrary` 链路。
@@ -60,13 +60,13 @@ aigate/
 │   └── src/main/
 │       ├── cpp/               # C++ 核心（libentry.so）
 │       │   ├── core/
-│       │   │   ├── proxy/     # proxy_server（mongoose 转发）+ request_pipeline + upstream + router
+│       │   │   ├── proxy/     # proxy_server（httplib 转发）+ request_pipeline + upstream + router
 │       │   │   ├── protocol/  # 多协议识别（anthropic/openai/gemini）
 │       │   │   ├── security/  # security_detector + response_scanner + password_leak_audit
 │       │   │   └── plugin/    # 插件机制（纯 C ABI 动态库加载 + 内置适配器）
 │       │   ├── napi/          # NAPI 桥接（模块名 "entry"）
 │       │   ├── include/       # 头文件 + json_scan.h/str_util.h 公共件
-│       │   ├── third_party/   # mongoose 7.22 + mbedTLS 3.6（vendored）
+│       │   ├── third_party/   # cpp-httplib 0.54.1 + mbedTLS 3.6（vendored）
 │       │   ├── types/libentry/# NAPI 的 TS 类型声明（改桥接层必须同步）
 │       │   └── tests/         # 宿主单测 + run_host_tests.sh（表驱动）
 │       ├── ets/               # ArkTS 层
@@ -95,7 +95,8 @@ aigate/
   的 `hilog`。格式参数必须 `%{public}s`/`%{public}d`，裸 `%s` 会被掩码为 `<private>`。
   调试：`hdc shell "hilog -x" | grep <TAG>`。
 - 改 NAPI 桥接层必须同步 `types/libentry/Index.d.ts` + `Types.d.ts`。
-- UI 设计规范（圆角/字号层级/动效/换肤走 AppStorage）与平台踩坑速查见 `AGENTS.md`。
+- UI 设计规范（圆角/字号层级/动效/换肤走 AppStorage）见 `UI-GUIDELINES.md`，
+  平台踩坑速查见 `PITFALLS.md`。
 
 ## 如何添加预设供应商
 
@@ -117,7 +118,7 @@ aigate/
 
 ## 如何修改转发管线
 
-管线三步骤（`request_pipeline.*`）均为无 mongoose 依赖的纯函数，改任一步骤须在
+管线三步骤（`request_pipeline.*`）均为无网络库依赖的纯函数，改任一步骤须在
 `tests/test_request_pipeline.cpp` 补宿主单测；涉及协议识别改 `protocol_adapter.*`
 （配套 `test_protocol.cpp`），涉及路由改 `router.*`（配套 `test_router.cpp`）。
 

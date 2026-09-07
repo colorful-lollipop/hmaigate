@@ -47,7 +47,7 @@ class Router {
 
   // 查表：命中返回规则 upstream 指针（ruleId 非空时顺带带出命中规则 id，供日志），
   // 未命中返回 nullptr。返回指针的有效性：规则表以不可变快照整体 swap，
-  // 本函数把当前快照存入 lastRead_ 保活，调用方（mongoose 工作线程，单线程）
+  // 本函数把当前快照存入 lastRead_ 保活，调用方（转发工作线程，单线程）
   // 在下一次 Route 调用前拷贝使用是安全的。
   const UpstreamConfig* Route(LlmProtocol proto, const std::string& model,
                               const std::string& uri,

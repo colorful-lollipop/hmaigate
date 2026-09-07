@@ -1,6 +1,6 @@
 // response_scanner.cpp —— 上游响应流式安全扫描器实现（M4，纯逻辑、宿主可单测）
 //
-// 刻意不含 mongoose / hilog：与 request_pipeline 同一原则，头文件与实现都能被
+// 刻意不含网络库 / hilog：与 request_pipeline 同一原则，头文件与实现都能被
 // 宿主侧（MinGW g++）直接编译进单测；overflow 等需要打日志的事件经 ScanOutcome
 // 标志位上抛给 proxy_server。
 #include "security/response_scanner.h"

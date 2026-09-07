@@ -1,7 +1,7 @@
-// request_pipeline.cpp —— 转发请求处理管线实现（纯逻辑，无 mongoose 依赖）
+// request_pipeline.cpp —— 转发请求处理管线实现（纯逻辑，无网络库依赖）
 //
-// 步骤实现自 proxy_server.cpp 原 MG_EV_HTTP_MSG 分支的内联逻辑平移而来，
-// 刻意不含任何 mongoose 类型：头文件可被宿主侧（MinGW g++）直接编译进单测。
+// 步骤实现自 proxy_server.cpp 原请求处理分支的内联逻辑平移而来，
+// 刻意不含任何网络库类型：头文件可被宿主侧（MinGW g++）直接编译进单测。
 #include "proxy/request_pipeline.h"
 
 #include "proxy/router.h"       // hmsec::Router（M3：规则路由表）
