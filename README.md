@@ -1,4 +1,4 @@
-# AIGate —— 鸿蒙大模型 Agent 网关
+# HMAIGate —— 鸿蒙大模型 Agent 网关
 
 [English](README_EN.md)
 

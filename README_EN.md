@@ -1,4 +1,4 @@
-# AIGate — LLM Agent Gateway for HarmonyOS
+# HMAIGate — LLM Agent Gateway for HarmonyOS
 
 [中文](README.md)
 
