@@ -1,0 +1,24 @@
+{
+  "string": [
+    {
+      "name": "module_desc",
+      "value": "鸿蒙安全网关"
+    },
+    {
+      "name": "EntryAbility_desc",
+      "value": "鸿蒙安全网关"
+    },
+    {
+      "name": "EntryAbility_label",
+      "value": "鸿蒙安全网关"
+    },
+    {
+      "name": "permission_internet_reason",
+      "value": "用于本地代理转发请求到大模型厂商"
+    },
+    {
+      "name": "permission_file_access_reason",
+      "value": "用于读写用户选择的 Claude Code settings.json（关联/还原配置）"
+    }
+  ]
+}

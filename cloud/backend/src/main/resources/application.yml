@@ -1,0 +1,34 @@
+server:
+  port: ${PORT:8088}
+  shutdown: graceful
+
+spring:
+  application:
+    name: aigate-cloud
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:sqlite:./aigate-cloud.db}
+    driver-class-name: org.sqlite.JDBC
+    username: ${SPRING_DATASOURCE_USERNAME:}
+    password: ${SPRING_DATASOURCE_PASSWORD:}
+  jpa:
+    database-platform: org.hibernate.community.dialect.SQLiteDialect
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+  jackson:
+    default-property-inclusion: non_null
+  lifecycle:
+    timeout-per-shutdown-phase: 20s
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+aigate:
+  admin:
+    username: ${AIGATE_ADMIN_USERNAME:admin}
+    password: ${AIGATE_ADMIN_PASSWORD:111111}
+  security:
+    allowed-origins: ${AIGATE_ALLOWED_ORIGINS:http://localhost:5173,http://127.0.0.1:5173}

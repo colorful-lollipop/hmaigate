@@ -1,0 +1,136 @@
+{
+  "color": [
+    {
+      "name": "start_window_background",
+      "value": "#E8F1FF"
+    },
+    {
+      "name": "primary",
+      "value": "#2563EB"
+    },
+    {
+      "name": "primary_pressed",
+      "value": "#1D4ED8"
+    },
+    {
+      "name": "primary_tint",
+      "value": "#EFF6FF"
+    },
+    {
+      "name": "accent",
+      "value": "#2563EB"
+    },
+    {
+      "name": "status_running",
+      "value": "#10B981"
+    },
+    {
+      "name": "status_running_tint",
+      "value": "#ECFDF5"
+    },
+    {
+      "name": "status_stopped",
+      "value": "#9CA3AF"
+    },
+    {
+      "name": "status_running_border",
+      "value": "#3310B981"
+    },
+    {
+      "name": "status_stopped_tint",
+      "value": "#F3F4F6"
+    },
+    {
+      "name": "status_bar_bg",
+      "value": "#FFFFFF"
+    },
+    {
+      "name": "menu_bg",
+      "value": "#FFFFFF"
+    },
+    {
+      "name": "menu_hover",
+      "value": "#F1F3F5"
+    },
+    {
+      "name": "panel_bg",
+      "value": "#FFFFFF"
+    },
+    {
+      "name": "card_bg",
+      "value": "#FFFFFF"
+    },
+    {
+      "name": "card_bg_secondary",
+      "value": "#FAFBFC"
+    },
+    {
+      "name": "section_bg",
+      "value": "#F7F8FA"
+    },
+    {
+      "name": "surface_bg",
+      "value": "#FFFFFF"
+    },
+    {
+      "name": "input_bg",
+      "value": "#F1F3F5"
+    },
+    {
+      "name": "page_bg",
+      "value": "#F2F4F7"
+    },
+    {
+      "name": "header_bg",
+      "value": "#FFFFFF"
+    },
+    {
+      "name": "button_secondary",
+      "value": "#F1F3F5"
+    },
+    {
+      "name": "button_secondary_pressed",
+      "value": "#E5E8EB"
+    },
+    {
+      "name": "text_primary",
+      "value": "#1F2329"
+    },
+    {
+      "name": "text_secondary",
+      "value": "#646A73"
+    },
+    {
+      "name": "text_tertiary",
+      "value": "#979DA6"
+    },
+    {
+      "name": "border",
+      "value": "#E8EAED"
+    },
+    {
+      "name": "divider",
+      "value": "#E8EAED"
+    },
+    {
+      "name": "danger",
+      "value": "#EF4444"
+    },
+    {
+      "name": "danger_tint",
+      "value": "#FEF2F2"
+    },
+    {
+      "name": "warn",
+      "value": "#F59E0B"
+    },
+    {
+      "name": "overlay",
+      "value": "#000000"
+    },
+    {
+      "name": "glass_bg",
+      "value": "#FFFFFF"
+    }
+  ]
+}

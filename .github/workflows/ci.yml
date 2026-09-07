@@ -1,0 +1,27 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  host-tests:
+    name: C++ 宿主单元测试（MinGW g++）
+    runs-on: windows-latest
+    defaults:
+      run:
+        # 测试脚本是 bash 脚本（用了 BASH_SOURCE / set -euo pipefail），
+        # 必须显式用 Git Bash 跑，不能用默认的 pwsh
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 确认 g++ 可用
+        run: g++ --version
+
+      - name: 编译并运行宿主测试
+        # windows-latest 自带 MinGW g++；脚本内部用 "$CXX"（默认 g++）编译
+        # upstream/security_detector 及对应测试并运行
+        run: bash entry/src/main/cpp/tests/run_host_tests.sh

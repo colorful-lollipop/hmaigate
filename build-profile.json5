@@ -1,0 +1,46 @@
+{
+  "app": {
+    // 签名材料（证书/Profile/密钥库路径与密码）属本机隐私，不随仓库分发。
+    // 在 DevEco Studio 中打开 File > Project Structure > Signing Configs 勾选
+    // Automatically generate signature 即可生成本机签名配置；无签名配置时构建
+    // 产出未签名 HAP（可直接安装模拟器，真机需签名）。
+    "signingConfigs": [],
+    "products": [
+      {
+        "name": "default",
+        "targetSdkVersion": "6.1.1(24)",
+        "compatibleSdkVersion": "6.1.1(24)",
+        "runtimeOS": "HarmonyOS",
+        "buildOption": {
+          "nativeCompiler": "BiSheng",
+          "strictMode": {
+            "caseSensitiveCheck": true,
+            "useNormalizedOHMUrl": true
+          }
+        }
+      }
+    ],
+    "buildModeSet": [
+      {
+        "name": "debug",
+      },
+      {
+        "name": "release"
+      }
+    ]
+  },
+  "modules": [
+    {
+      "name": "entry",
+      "srcPath": "./entry",
+      "targets": [
+        {
+          "name": "default",
+          "applyToProducts": [
+            "default"
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+backend/target/
+backend/aigate-cloud.db
+backend/aigate-cloud.db-shm
+backend/aigate-cloud.db-wal
+console/node_modules/
+console/dist/
+console/.vite/
+.env
+.env.*
+!.env.example

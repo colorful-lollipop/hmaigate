@@ -1,0 +1,48 @@
+/node_modules
+/oh_modules
+/local.properties
+/.idea
+**/build
+/.hvigor
+.cxx
+/.clangd
+/.clang-format
+/.clang-tidy
+**/.test
+**/.out
+/.appanalyzer
+
+# Claude Code local tooling (scraped docs/indexes, local settings)
+/.claude
+/.agents
+
+# Transient artifacts (device screenshots, UI hierarchy dumps) — repo-root only;
+# docs/images/ holds the curated screenshots referenced by the README.
+/snap*.jpeg
+/snap*.png
+/hm_*.jpeg
+/user_screenshot*
+/*.jpeg
+/layout.json
+/aigate_*.json
+
+# Local icon-design scratch
+/.tmp_icon
+
+# ArkTS IDE cache
+/.arkts
+**/.arkts
+
+# Python caches (project skill tooling)
+__pycache__/
+
+# Local scratch
+/tmp/
+/review_report.md
+/review_results.json
+
+# Real provider config / secrets — contains live API keys, keep local
+/doc/settings.json
+# Local tool settings (per-machine permissions)
+/.agents/.claude
+/.agents/settings.local.json

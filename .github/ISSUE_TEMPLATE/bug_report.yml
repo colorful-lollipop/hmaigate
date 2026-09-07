@@ -1,0 +1,67 @@
+name: Bug 报告
+description: 报告一个可复现的问题
+title: "[Bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感谢反馈！请尽量填写完整信息。**切勿粘贴真实 API Key 或 settings.json 内容。**
+  - type: input
+    id: device
+    attributes:
+      label: 设备环境
+      description: 真机还是模拟器？设备型号与系统版本
+      placeholder: 例：MateBook Pro 模拟器 / HarmonyOS 6.1.1(24)
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: 应用版本 / 提交
+      description: 构建所用的 commit 或版本号
+      placeholder: 例：main @ abc1234
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: 复现步骤
+      description: 最小可复现的操作步骤
+      placeholder: |
+        1. 打开应用，添加供应商 ...
+        2. 启动代理 ...
+        3. 在 Claude Code 发起请求 ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: 期望行为
+      placeholder: 你期望发生什么？
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: 实际行为
+      placeholder: 实际发生了什么？（错误码、现象等）
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: 相关日志
+      description: |
+        C++ 侧：hdc shell "hilog -x" | grep ProxyEv
+        请脱敏后粘贴（去除 Key、敏感 URL）
+      render: text
+    validations:
+      required: false
+  - type: textarea
+    id: extra
+    attributes:
+      label: 补充说明
+      description: 截图、配置（脱敏后）等其他上下文
+    validations:
+      required: false

@@ -1,0 +1,25 @@
+services:
+  aigate-cloud:
+    build:
+      context: ./backend
+    environment:
+      AIGATE_ADMIN_PASSWORD: ${AIGATE_ADMIN_PASSWORD:?set_AIGATE_ADMIN_PASSWORD_before_starting}
+      AIGATE_ALLOWED_ORIGINS: ${AIGATE_ALLOWED_ORIGINS:-http://localhost:5173,http://127.0.0.1:5173}
+      SPRING_DATASOURCE_URL: jdbc:sqlite:/app/data/aigate-cloud.db
+    ports:
+      - "127.0.0.1:8088:8088"
+    volumes:
+      - aigate-data:/app/data
+
+  aigate-console:
+    build:
+      context: ./console
+      args:
+        VITE_API_BASE_URL: /api/v1
+    depends_on:
+      - aigate-cloud
+    ports:
+      - "18080:80"
+
+volumes:
+  aigate-data:
