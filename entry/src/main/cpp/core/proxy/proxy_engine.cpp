@@ -4,7 +4,7 @@
 
 namespace aigate {
 
-// ProxyEngine 实现：薄外壳，委托给 hmsec::ProxyServer（mongoose 转发核心）。
+// ProxyEngine 实现：薄外壳，委托给 hmsec::ProxyServer（转发核心）。
 // 保留这层门面的真实价值：Impl 记住 Start 时的 host/port，回填进 GetStatus
 //（ProxyServer 自己不存监听地址，快照里只有计数器与运行标志）。
 class ProxyEngine::Impl {

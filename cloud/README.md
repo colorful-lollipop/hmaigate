@@ -51,4 +51,4 @@ npm run dev
 
 ## 许可
 
-云端代码与仓库根目录保持 GPL-2.0-only 许可，详见根目录 `LICENSE`。
+云端代码与仓库根目录保持 MIT 许可，详见根目录 `LICENSE`。

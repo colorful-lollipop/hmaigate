@@ -1,6 +1,6 @@
 // protocol_adapter.h —— 多 LLM 协议识别与请求元数据提取（M3）
 //
-// 纯逻辑、零依赖（不引 mongoose / JSON 库），宿主侧（MinGW g++）可直接编译单测。
+// 纯逻辑、零依赖（不引网络库 / JSON 库），宿主侧（MinGW g++）可直接编译单测。
 // 识别结果供 Router 做规则匹配（protocol 字段），也供日志诊断使用。
 #pragma once
 

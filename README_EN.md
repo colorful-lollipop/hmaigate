@@ -8,7 +8,7 @@ AIGate is a local LLM API forwarding gateway that runs on **HarmonyOS 2in1 (PC) 
 
 - **Local forwarding proxy** — listens on `127.0.0.1:8080` (port configurable in-app) and forwards Agent requests to the current provider's `baseUrl`; SSE streaming is passed through transparently.
 - **Keys never leave the gateway** — the real API key is injected server-side into request headers (`x-api-key` / `Authorization: Bearer` / `x-goog-api-key`), stored only in preferences, never persisted to Agent config (Claude, Codex, and OpenCode local configs receive only a placeholder token).
-- **HTTPS upstreams** — vendored mbedTLS 3.6 provides TLS (mongoose `MG_TLS_MBED` backend); GLM / Baidu providers verified end-to-end.
+- **HTTPS upstreams** — vendored mbedTLS 3.6 provides TLS (cpp-httplib `CPPHTTPLIB_MBEDTLS_SUPPORT` backend); GLM / Baidu providers verified end-to-end.
 - **Security detection** — a pluggable C++ rule engine screens **request bodies** before forwarding: password leaks, prompt injection, and context injection (conservative WARN-level, logged only); hits → 403. **Response-side detection is wired (M4)**: SSE events are scanned streaming (malicious tool use / password leak hits are blocked and an SSE error event is sent back to the client). Rules support custom keywords/patterns and per-rule hit counts. Request headers are deliberately excluded so legitimate `Bearer`/`x-api-key` values are not flagged.
 - **System tray persistence** — status-bar tray icon; closing the window hides the ability (`hideAbility`) instead of exiting, keeping the process and proxy alive; click the tray icon to bring the window back.
 - **In-app provider management** — per-channel provider lists, presets, and CRUD for Claude Code, Codex, and OpenCode; preferences are the single source of truth; switching providers hot-updates the running proxy.
@@ -65,7 +65,7 @@ UI (Index.ets, pure view)
   → GatewayController (orchestration / use-case layer)
     → { ProviderRepository, SettingsRepository, ProxyService }
       → NAPI (libentry.so, module name "entry")
-        → hmsec::ProxyServer (mongoose event-driven forwarding + mbedTLS + security detection)
+        → hmsec::ProxyServer (cpp-httplib-based forwarding + mbedTLS + security detection)
 ```
 
 See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for details,
@@ -90,11 +90,11 @@ motivation.
 ## Acknowledgements
 
 - [cc-switch](https://github.com/farion1231/cc-switch) — the UI and provider model are ported from this project
-- [mongoose](https://mongoose.ws/) 7.22 — networking stack (Cesanta, GPL-2.0-only / commercial dual license)
+- [cpp-httplib](https://github.com/yhirose/cpp-httplib) 0.54.1 — networking stack (MIT)
 - [mbedTLS](https://github.com/Mbed-TLS/mbedtls) 3.6 — TLS backend (Apache-2.0)
 
 ## License
 
-This project is released under **GPL-2.0-only** — see [LICENSE](LICENSE). Vendored components and their licenses are listed in [NOTICE](NOTICE): because of mongoose's dual-license terms, closed-source distribution requires a Cesanta commercial license or replacing the networking stack.
+This project is released under the **MIT License** — see [LICENSE](LICENSE). Vendored components and their licenses are listed in [NOTICE](NOTICE).
 
 Contributions are welcome — please read [CONTRIBUTING.md](CONTRIBUTING.md) first.

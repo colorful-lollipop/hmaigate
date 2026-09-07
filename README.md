@@ -8,7 +8,7 @@ AIGate 是一个运行在 **HarmonyOS 2in1（PC）设备**上的本地 LLM API �
 
 - **本地转发代理** — 监听 `127.0.0.1:8080`（端口应用内可改），把 Agent 请求转发到当前供应商的上游 `baseUrl`；支持 SSE 流式透传。
 - **密钥不出网关** — 真实 API Key 在服务端注入请求头（`x-api-key` / `Authorization: Bearer` / `x-goog-api-key`），只存 preferences，永不落盘到 Agent 配置（Claude/Codex/OpenCode 本地配置写入的都是占位 token）。
-- **HTTPS 上游** — vendored mbedTLS 3.6 提供 TLS（mongoose `MG_TLS_MBED` 后端），GLM / 百度等供应商已端到端验证。
+- **HTTPS 上游** — vendored mbedTLS 3.6 提供 TLS（cpp-httplib `CPPHTTPLIB_MBEDTLS_SUPPORT` 后端），GLM / 百度等供应商已端到端验证。
 - **安全检测** — C++ 可插拔规则引擎，转发前筛查**请求体**：密码泄露、提示注入、上下文注入（保守 WARN 级只记录），命中返回 403；**响应侧检测已接线（M4）**：流式扫描 SSE 事件（恶意 tool use / 密码泄露命中即拦，向客户端回发 SSE 错误事件）。支持规则自定义词条与命中计数。刻意不检测请求头，避免合法 `Bearer`/`x-api-key` 被误判。
 - **系统托盘常驻** — 状态栏托盘图标，关闭窗口转隐藏（`hideAbility`），进程与代理保活，点击托盘图标唤回窗口。
 - **应用内供应商管理** — Claude Code、Codex、OpenCode 三渠道的供应商列表、预设模板与增删改查，配置以 preferences 为唯一数据源；切换供应商后运行中的代理热更新上游。
@@ -65,7 +65,7 @@ UI（Index.ets，纯视图）
   → GatewayController（编排/用例层）
     → { ProviderRepository, SettingsRepository, ProxyService }
       → NAPI（libentry.so，模块名 "entry"）
-        → hmsec::ProxyServer（mongoose 事件驱动转发 + mbedTLS + 安全检测）
+        → hmsec::ProxyServer（cpp-httplib 转发 + mbedTLS + 安全检测）
 ```
 
 详见 [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)。开发指南见
@@ -89,11 +89,11 @@ UI（Index.ets，纯视图）
 ## 致谢与参考
 
 - [cc-switch](https://github.com/farion1231/cc-switch) —— UI 与供应商模型移植自该项目
-- [mongoose](https://mongoose.ws/) 7.22 —— 网络栈（Cesanta，GPL-2.0-only / 商业双许可）
+- [cpp-httplib](https://github.com/yhirose/cpp-httplib) 0.54.1 —— 网络栈（MIT）
 - [mbedTLS](https://github.com/Mbed-TLS/mbedtls) 3.6 —— TLS 后端（Apache-2.0）
 
 ## License
 
-本项目以 **GPL-2.0-only** 发布，见 [LICENSE](LICENSE)。vendored 组件及其许可说明见 [NOTICE](NOTICE)——因 mongoose 的双许可条款，闭源分发须取得 Cesanta 商业许可或替换网络栈。
+本项目以 **MIT** 发布，见 [LICENSE](LICENSE)。vendored 组件及其许可说明见 [NOTICE](NOTICE)。
 
 参与贡献请先阅读 [CONTRIBUTING.md](CONTRIBUTING.md)。

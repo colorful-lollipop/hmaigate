@@ -2,7 +2,7 @@
 // upstream.h —— 上游 URL / 转发目标的纯函数（无网络依赖，便于单元测试）
 //
 // 代理收到 Claude Code 的请求后，需要把「请求路径」拼到「上游 BaseURL」上，
-// 并解析出 host/port/TLS 以便 mongoose 建立到上游的连接。本模块封装这些纯逻辑。
+// 并解析出 host/port/TLS 以便代理核心建立到上游的连接。本模块封装这些纯逻辑。
 #pragma once
 
 #include <cstdint>

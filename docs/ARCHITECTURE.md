@@ -1,13 +1,14 @@
 # AIGate 架构文档
 
 > 本文以源码与根目录 `AGENTS.md` 为准，描述当前实现（不是设计稿）。
+> 平台踩坑速查在 `PITFALLS.md`，UI 规范在 `UI-GUIDELINES.md`。
 
 ## 总览
 
 AIGate 是 HarmonyOS 2in1（PC）上的本地 LLM API 转发网关，整体分两层：
 
 - **ArkTS UI 层**：Stage 模型应用，负责供应商管理、多渠道切换、设置、托盘与编排；
-- **C++ 核心**：mongoose 事件驱动转发代理 + mbedTLS + 安全检测 + 插件机制，经 NAPI 桥接为 `libentry.so`（模块名 `"entry"`）。
+- **C++ 核心**：cpp-httplib 转发代理 + mbedTLS + 安全检测 + 插件机制，经 NAPI 桥接为 `libentry.so`（模块名 `"entry"`）。
 
 ## 分层与数据流
 
@@ -37,7 +38,7 @@ AIGate 是 HarmonyOS 2in1（PC）上的本地 LLM API 转发网关，整体分�
                        ┌────────▼─────────────────────────┐
                        │ aigate::ProxyEngine（门面薄壳）    │
                        │  → hmsec::ProxyServer（真实实现）  │
-                       │  mongoose + mbedTLS + 管线        │
+                       │  cpp-httplib + mbedTLS + 管线     │
                        └──────────────────────────────────┘
 ```
 
@@ -45,7 +46,8 @@ AIGate 是 HarmonyOS 2in1（PC）上的本地 LLM API 转发网关，整体分�
   controller 是唯一组合这些件的地方，视图不直接触碰 service/repository。
 - Ability→页面传数据走 `AppStorage.setOrCreate` + `@StorageLink`。
 - **持久化唯一数据源是 ArkData preferences**（`SettingsRepository` / `ProviderRepository`，
-  静态单例，`EntryAbility.onCreate` 注入 context 初始化）。
+  静态单例，`EntryAbility.onCreate` 注入 context 初始化）。C++ 侧旧 ConfigManager
+  已于 R1 删除；云端快照经校验后写入 SettingsRepository，云端连接变更清除旧 ETag/快照。
 - **多渠道管理**：`types/App.ets` 的 `CHANNEL_APPS` 定义 Claude Code / Codex /
   OpenCode 三渠道；活动渠道 `activeAppId` 持久化在 `SettingsRepository`，
   `setActiveApp` = 持久化 + 推该渠道当前供应商 + 重下发路由表。
@@ -54,67 +56,89 @@ AIGate 是 HarmonyOS 2in1（PC）上的本地 LLM API 转发网关，整体分�
 
 不要混淆：
 
-- **`namespace hmsec`** — 真实实现。`ProxyServer`（单例）是 mongoose 事件驱动转发代理；
+- **`namespace hmsec`** — 真实实现。`ProxyServer`（单例）是 cpp-httplib 转发代理；
   `request_pipeline.*` 是转发管线纯逻辑（有宿主单测）；`upstream.*` 是纯 URL/鉴权逻辑
   （有宿主单测）。
 - **`namespace aigate`** — 旧门面层，持有 NAPI 表面。`ProxyEngine`（单例）只是薄壳，
-  `Impl` 把 `Start/Stop/GetStatus/SetUpstream` 委托给 `hmsec::ProxyServer::Instance()`。
+  `Impl` 把 `Start/Stop/GetStatus/SetUpstream` 委托给 `hmsec::ProxyServer::Instance()`，
+  并记住 Start 时的 host/port 回填 `GetStatus`。R1 已删零调用成员
+  （RequestInterceptor/UpdateConfig/上游代理死字段等）。
   **例外：`SecurityDetector` 是真实现**，由 `request_pipeline` 直接调用。
 
 ## 转发主流程
 
 ```
-Claude Code → 127.0.0.1:8080 (mg_http_listen，工作线程 ServerEv)
+Agent 工具 → 127.0.0.1:8080（httplib 监听，线程池 handler，catch-all 路由 ".*"）
   → 管线 ResolveRoute：DetectProtocol + ExtractMetadata → Router 规则表
       （命中用规则上游，未命中/空表回退默认上游 CurrentUpstream + ResolveTarget）
   → 管线 SecurityCheckRequest：仅对请求体跑 SecurityDetector::DetectRequest，
-      只阻断「级别→动作」映射为 BLOCK 的命中
-  → 管线 BuildRequest：重写 Host、剔 hop-by-hop/客户端鉴权头、注入网关 Key
-  → mg_connect 上游（https 走 mbedTLS 握手，TLS/SNI 按实际转发目标）
-  → ClientEv MG_EV_READ 回传响应：响应检测开启时 ConnCtx 挂 ResponseScanner
-      按 SSE 事件边界流式扫描，BLOCK 命中则回发 SSE 错误事件并优雅关闭；
-      否则零拷贝直通
+      只阻断「级别→动作」映射为 BLOCK 的命中（403 返回）
+  → pump 线程向上游 send()（https 走 mbedTLS，TLS 按实际转发目标）：
+      转发头重写（剔 hop-by-hop/Accept-Encoding/客户端鉴权头，注入网关 Key，
+      Host 由 httplib 按上游生成；set_path_encode(false) 原样透传 path+query）
+      响应头经 response_handler 提前发布 → body 字节经 content_receiver 压入
+      有界字节队列（4MB 背压）
+  → handler 等到响应头后回写状态码/响应头，set_chunked_content_provider 从
+      队列排空回传：响应检测开启时 RelayContext 挂 ResponseScanner（扫描在
+      泵线程按 SSE 事件边界进行，只有确认安全的字节入队），BLOCK 命中则
+      入队一条 SSE 错误事件后关队列；否则直通
+  → provider 结束（Response 析构）时资源释放器 stop 上游 Client、注销在途表
 ```
 
 要点：
 
-- 每条本地连接与一条上游连接通过 `ConnCtx` 配对，响应字节借此找回本地连接；
+- 每条转发一条 pump 线程 + 一个 `RelayContext`（队列/扫描器/统计标志），三方
+  （pump、handler、Stop）共享，全部经 shared_ptr 保活；
 - 统计计数器（total / success / blocked / failed）有互斥锁保护；
-- 事件循环跑在独立 `std::thread`（`mg_mgr_poll`，200ms），与 NAPI 调用线程隔离；
-- 关闭前待发送：一端关闭时对端标记 `is_draining`（不是 `is_closing`），让 mongoose
-  先冲完发送缓冲，否则尾部数据丢失（客户端报 `2300018 partial file`）；
+- 监听跑在独立 `std::thread`（httplib `listen()` 阻塞语义），与 NAPI 调用线程隔离；
+- **停止有界**：`Stop()` 关监听 socket → 对在途转发 `CloseAndDrop` 队列 +
+  `Client::stop()`（进行中请求会 shutdown socket，泵立即解阻塞——httplib 的
+  `socket_requests_in_flight_` 语义）→ join worker。绝不等待上游超时；
+- 客户端断开：provider `sink.write` 失败 → `CloseAndDrop` + stop 上游 → 泵尽快
+  退出，provider 以 Canceled 终止（chunked 写出天然 flush，无尾部丢失问题）；
 - 鉴权头映射（`upstream.cpp::BuildAuthHeader`）：`ANTHROPIC_API_KEY`→`x-api-key`、
   `ANTHROPIC_AUTH_TOKEN`→`Authorization: Bearer`、`GEMINI_API_KEY`→`x-goog-api-key`。
   C++ 侧接受任意 `apiKeyField`，本身 Agent 无关；
 - 多协议识别（`core/protocol/protocol_adapter.*`）按路径特征 + body 字段签名识别
   Anthropic / OpenAI / Gemini 协议并提取 `model`/`stream` 元数据，供规则路由使用
-  （刻意不引 JSON 库：大 body 性能 + 零依赖）。
+  （刻意不引 JSON 库：大 body 性能 + 零依赖）。路径特征：`/v1/messages`→anthropic、
+  `/v1/chat/completions` 与 `/v1/responses`→openai、`:generateContent`/
+  `:streamGenerateContent`→gemini（gemini 的 model 从 uri `/models/<m>:` 兜底）。
+- **路由表契约**（`router.cpp::SetRulesFromJson`）：非法 JSON 返回 false 不动旧表，
+  空数组 `[]` 关闭路由；规则表以不可变快照整体 swap（热更新安全）。匹配按
+  `(modelPrefix 前缀 && protocol && pathPrefix 前缀)`，`priority` 大者优先、
+  同优先级按数组顺序。规则 JSON schema 见 `Types.d.ts` 的 `NativeRouteRule`。
 
-### socket 路径读语义（崩溃雷区）
+### 为什么用 pump 线程桥接而不是 open_stream
 
-本构建走 mongoose 的 socket 路径（非 MIP 用户态协议栈）：`MG_EV_READ` 的 `ev_data`
-是 `long*` 字节数，数据在 `c->recv`；转发后必须 `mg_iobuf_del(&c->recv, 0, c->recv.len)`
-排空，否则字节累积重复转发。把 `ev_data` 当 `mg_str*` 解引用会 NULL+8 SIGSEGV。
+httplib 的流式 API `open_stream` 把 socket 所有权移交给 `StreamHandle`
+（私有字段），外部无法主动中断挂起的 `read()`——`Stop()` 最坏要等上游 300s 读
+超时。缓冲式 `send()` 路径下请求进行中调用 `Client::stop()` 会 shutdown socket
+（`ClientImpl::stop` 注释明确这是线程安全的唯一手段），泵立即解阻塞。代价是
+多一条线程 + 一段 4MB 有界队列，换取可预测的停止语义。
 
 ## TLS 决策
 
-- **mongoose 锁定 7.22**：API 与网上旧文档不同（`mg_str.buf`、`MG_MAX_HTTP_HEADERS`、
-  `mg_tls_opts.name` 是 `mg_str`）。重新 vendor 须保持 7.22 或同步改调用点。
-- **用 `MG_TLS=MG_TLS_MBED`，不用 `MG_TLS_BUILTIN`**：内置 TLS 无条件拒绝带扩展的证书，
-  且其 DER 解析器处理不了现代证书链，https 上游根本握不了手。
-- **用 mbedTLS 3.6，不用 4.x**：4.x 切到 PSA 控制的 RNG，需要额外初始化；3.6 经
-  `mg_mbed_rng` 驱动握手 RNG，`psa_crypto_init()` 在 `ProxyServer::Start` 调一次
-  （3.6 把部分 EC 运算路由到 PSA）。mbedTLS 静态链入 entry。
+- **cpp-httplib 0.54.1，`CPPHTTPLIB_MBEDTLS_SUPPORT`**：单头库，mbedTLS 后端按
+  `MBEDTLS_VERSION_MAJOR` 自适配；TLS 会话/校验开关在 `SSLClient` 上
+  （`enable_server_certificate_verification(false)` 等）。
+- **用 mbedTLS 3.6，不用 4.x**：4.x 切到 PSA 控制的 RNG，需要额外初始化；3.6 的
+  `psa_crypto_init()` 在 `ProxyServer::Start` 调一次（3.6 把部分 EC 运算路由到
+  PSA）。mbedTLS 静态链入 entry。
 - **`VERIFY_NONE` 的取舍**：NDK 无系统 CA 列表，握手成功但不验链——本地可信网关
-  场景可接受。如需严格校验，须 bundle CA 列表并切 `VERIFY_REQUIRED`。
+  场景可接受。如需严格校验，须 bundle CA 列表。
+- **转发头里剥 `Accept-Encoding`**：本构建未编 zlib，若上游回 gzip 响应，泵会因
+  `UnsupportedContentEncoding` 失败；剥掉即「只收未压缩响应」。
 
 ## 安全检测设计
 
 `core/security/security_detector.{cpp,h}` 是可插拔规则引擎，默认四条规则：
 `password_leak`、`prompt_injection`、`malicious_tool_use`（响应侧）、`context_injection`
-（保守取向：默认只记录不阻断）。规则支持用户自定义词条/正则（`UpdateRuleConfig`，
+（保守取向：默认只记录不阻断；`password_leak`/`prompt_injection` 默认级别为 BLOCK
+以保持阻断行为）。规则支持用户自定义词条/正则（`UpdateRuleConfig`，
 互斥锁保护）与原子命中计数；「级别→动作」映射决定 WARN 级命中是否阻断
 （`SecurityDetector::IsBlocking` 三处调用方收敛复用）。
+安全检测总开关由 `ProxyServer` 的 `security_enabled_`（默认 true）承载。
 
 - **只查 body，不查头**：请求侧刻意排除 header（避免合法 `Bearer`/`x-api-key` 被
   误判为密码泄露），响应侧跳过 `HTTP/` 开头的响应头块。
@@ -125,8 +149,8 @@ Claude Code → 127.0.0.1:8080 (mg_http_listen，工作线程 ServerEv)
   「密码泄露提醒」区。
 - **响应侧流式扫描**（`core/security/response_scanner.*`）：按 SSE 事件边界
   （`\n\n`/`\r\n\r\n`）切分扫描，完整事件通过即放行（延迟 ≈ 一个事件）；非 SSE
-  聚合缓冲上限 256KB，超限 fail-open 直通并告警；BLOCK 命中向客户端回发
-  `security_block` SSE 错误事件后按 `is_draining` 优雅关闭。
+  聚合缓冲上限 256KB，超限 fail-open 直通并告警；BLOCK 命中向客户端入队一条
+  `security_block` SSE 错误事件后终止泵（chunked 收尾无尾部丢失问题）。
 - **插件链**：内置 `SecurityDetector` 包装为 id `builtin-security-detector` 的内置
   插件；已启用的文件来源 security 插件的 `detect_request`/`detect_response` 链式
   调用，任一 BLOCK 即拦截。

@@ -1,11 +1,11 @@
-// request_pipeline.h —— 转发请求处理管线（纯逻辑步骤，无 mongoose 依赖，便于宿主侧单测）
+// request_pipeline.h —— 转发请求处理管线（纯逻辑步骤，无网络库依赖，便于宿主侧单测）
 //
-// 把 proxy_server.cpp 的 MG_EV_HTTP_MSG 分支拆成三个边界清晰、可独立测试的步骤：
+// 把 proxy_server.cpp 的请求处理拆成三个边界清晰、可独立测试的步骤：
 //   1. ResolveRoute         选择上游并解析转发目标（M3：协议识别 + Router 规则路由，未命中回退默认单一上游）
 //   2. SecurityCheckRequest 请求体安全检测（只查 body，刻意不查请求头）
 //   3. BuildRequest         构造转发字节（重写 Host、剔 hop-by-hop/客户端鉴权头、注入网关 Key）
-// proxy_server.cpp 只保留 mongoose 事件分发、ConnCtx 生命周期与统计计数，
-// 在 MG_EV_HTTP_MSG 分支里顺序调用本管线。
+// proxy_server.cpp 只保留事件分发、连接生命周期与统计计数，
+// 在请求入口顺序调用本管线。
 #pragma once
 
 #include <string>
@@ -18,7 +18,7 @@
 
 namespace hmsec {
 
-// 请求头名值对（已从 mongoose 消息剥离为纯字符串，mongoose 类型不进本模块）。
+// 请求头名值对（已从 HTTP 消息剥离为纯字符串，网络库类型不进本模块）。
 using HeaderList = std::vector<std::pair<std::string, std::string>>;
 
 // ResolveRoute 的失败类别：调用方据此映射 502 文案与 lastError（保持既有行为）。

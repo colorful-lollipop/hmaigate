@@ -8,10 +8,9 @@ if(DEFINED PACKAGE_FIND_FILE)
     include(${PACKAGE_FIND_FILE})
 endif()
 
-# ---- mbedtls：为 mongoose 提供 TLS 后端 ----
-# 内置 TLS（MG_TLS_BUILTIN）是极简实现，解析不了真实服务器证书：
-# 无条件拒绝带扩展的证书，且 DER 解析器对现代证书结构直接失败。
-# mbedtls 是工业级 TLS/X.509；mongoose 经 MG_TLS_MBED 集成（<4.0 用 mg_mbed_rng）。
+# ---- mbedtls：cpp-httplib 的 TLS 后端（CPPHTTPLIB_MBEDTLS_SUPPORT）----
+# 上游 TLS 需要能解析真实服务器证书的完整 TLS/X.509 实现；httplib 的 mbedTLS
+# 后端按 MBEDTLS_VERSION_MAJOR 自适配 3.x/4.x（本仓库 vendored 3.6）。
 set(MBEDTLS_ROOT ${NATIVERENDER_ROOT_PATH}/third_party/mbedtls)
 file(GLOB MBEDTLS_SRCS CONFIGURE_DEPENDS ${MBEDTLS_ROOT}/library/*.c)
 add_library(mbedtls STATIC ${MBEDTLS_SRCS})
@@ -29,7 +28,7 @@ add_library(entry SHARED
 
     # 代理核心
     core/proxy/proxy_engine.cpp      # 对外门面（薄外壳）
-    core/proxy/proxy_server.cpp      # mongoose 转发实现（事件分发 + 连接生命周期）
+    core/proxy/proxy_server.cpp      # httplib 转发实现（pump 线程桥接 + 连接生命周期）
     core/proxy/request_pipeline.cpp  # 转发管线：路由/请求体安全检测/请求构造（有宿主单测）
     core/proxy/upstream.cpp          # 纯逻辑：URL 解析/拼接（有宿主单测）
     core/proxy/router.cpp            # M3 规则路由表（手写最小 JSON 解析，有宿主单测）
@@ -42,15 +41,12 @@ add_library(entry SHARED
     core/security/response_scanner.cpp  # M4 响应流式安全扫描（SSE 事件边界切分，有宿主单测）
     core/security/password_leak_audit.cpp  # 请求侧密码泄露提醒（异步脱敏审计）
     core/plugin/plugin_manager.cpp
-
-    # 第三方：mongoose 嵌入式网络库（TLS 后端用上面的 mbedtls）
-    third_party/mongoose/mongoose.c
 )
 
-# mongoose：使用 mbedtls TLS 后端（解析真实 https 上游证书），关闭日志噪声。
-# MG_TLS_MBED 让 mongoose.c 编译 tls_mbed 集成层。
+# cpp-httplib：启用 mbedTLS 后端（解析真实 https 上游证书）。
+# 单头库无需额外源文件；本构建未编 zlib/brotli，代理侧不收压缩响应
+#（转发头里已剥 Accept-Encoding，见 proxy_server.cpp）。
 target_compile_definitions(entry PUBLIC
-    MG_TLS=MG_TLS_MBED
-    MG_ENABLE_LOG=0)
+    CPPHTTPLIB_MBEDTLS_SUPPORT)
 
 target_link_libraries(entry PUBLIC libace_napi.z.so pthread mbedtls libhilog_ndk.z.so)

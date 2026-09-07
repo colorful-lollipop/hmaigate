@@ -55,7 +55,7 @@ export struct AboutSection {
           .fontColor($r('app.color.text_secondary'))
           .width('100%')
 
-        Text('License: GPL-2.0-only')
+        Text('License: MIT')
           .fontSize(12)
           .fontColor($r('app.color.text_tertiary'))
           .width('100%')

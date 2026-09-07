@@ -1,34 +1,20 @@
 AIGate — 鸿蒙大模型 Agent 网关
 Copyright (c) AIGate contributors
 
-本项目以 GNU General Public License v2.0 only（GPL-2.0-only）发布，完整许可证文本见
-同目录 LICENSE 文件。
+本项目以 MIT License 发布，完整许可证文本见同目录 LICENSE 文件。
 
 第三方组件（vendored dependencies）
 ====================================
 
-1. mongoose 7.22
-   - 位置：entry/src/main/cpp/third_party/mongoose/
-   - 版权：Copyright (c) 2004-2013 Sergey Lyubka
-           Copyright (c) 2013-2025 Cesanta Software Limited
-   - 许可：GPL-2.0-only or commercial（双许可，见 mongoose.h 头注释
-           SPDX-License-Identifier: GPL-2.0-only or commercial，
-           商业许可条款见 https://www.mongoose.ws/licensing/）
-   - 用途：HTTP/TLS 网络栈，转发代理的事件驱动核心。
+1. cpp-httplib 0.54.1
+   - 位置：entry/src/main/cpp/third_party/httplib/httplib.h
+   - 版权：Copyright (c) 2026 Yuji Hirose
+   - 许可：MIT License（见文件头注释）
+   - 用途：HTTP 客户端/服务端网络栈，转发代理的核心。
 
 2. mbedTLS 3.6
    - 位置：entry/src/main/cpp/third_party/mbedtls/
    - 版权：Copyright The Mbed TLS Contributors
    - 许可：Apache-2.0 OR GPL-2.0-or-later 双许可（见各源文件
            SPDX-License-Identifier），本项目选择以 Apache-2.0 条款使用。
-   - 用途：上游 HTTPS 连接的 TLS 后端（MG_TLS=MG_TLS_MBED）。
-
-整体许可说明
-============
-
-由于 mongoose 以 "GPL-2.0-only or commercial" 双许可分发且本项目未持有 Cesanta
-商业许可，本项目整体必须以 GPL-2.0-only 发布。
-
-如果你需要在闭源/商业产品中分发本项目的衍生版本，必须满足以下任一条件：
-  a) 向 Cesanta 购买 mongoose 商业许可（https://www.mongoose.ws/licensing/）；或
-  b) 将网络栈替换为宽松许可（MIT/Apache/BSD 等）的替代实现。
+   - 用途：上游 HTTPS 连接的 TLS 后端（CPPHTTPLIB_MBEDTLS_SUPPORT）。

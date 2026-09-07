@@ -1,7 +1,7 @@
 // test_request_pipeline.cpp —— request_pipeline.h 管线步骤的宿主侧单元测试
 //
 // 覆盖「头过滤 + 鉴权注入」矩阵（BuildRequest）、路由解析（ResolveRoute）、
-// 以及请求体安全检测开关（SecurityCheckRequest）。管线模块不含 mongoose 类型，
+// 以及请求体安全检测开关（SecurityCheckRequest）。管线模块不含网络库类型，
 // 可直接用 MinGW g++ 编译。
 #include "../include/proxy/request_pipeline.h"
 #include "../include/proxy/router.h"  // M3：ResolveRoute 规则路由接线测试
