@@ -49,6 +49,8 @@ struct Index {
   @State proxyPort: number = 8080;
   @State totalRequests: number = 0;
   @State blockedRequests: number = 0;
+  // 启停操作进行中标志：onChange 连发/程序化回写去抖（见 toggleProxy）
+  private toggleBusy: boolean = false;
   // Hero 卡状态点呼吸动画相位（animateTo 递归驱动，pulseStep 内自停）
   @State pulseOn: boolean = false;
   private pulsing: boolean = false;
@@ -155,15 +157,29 @@ struct Index {
     this.refresh();
   }
 
-  private async toggleProxy(): Promise<void> {
-    if (this.proxyRunning) {
-      GatewayController.stopGateway();
-      this.proxyRunning = false;
-    } else {
-      const ok: boolean = await GatewayController.startGateway(this.proxyHost, this.proxyPort);
-      this.proxyRunning = ok;
+  private async toggleProxy(target?: boolean): Promise<void> {
+    // Toggle 的 isOn 由 proxyRunning 驱动，而程序化回写（启动未完成时 UI 同步回
+    // OFF）同样会触发 onChange；不去抖会造成重复启动/误停。忙等中的事件与"值
+    // 等于当前端态"的程序化回写一律忽略。
+    if (this.toggleBusy) {
+      return;
     }
-    this.refresh();
+    if (target !== undefined && target === this.proxyRunning) {
+      return;
+    }
+    this.toggleBusy = true;
+    try {
+      if (this.proxyRunning) {
+        GatewayController.stopGateway();
+        this.proxyRunning = false;
+      } else {
+        const ok: boolean = await GatewayController.startGateway(this.proxyHost, this.proxyPort);
+        this.proxyRunning = ok;
+      }
+      this.refresh();
+    } finally {
+      this.toggleBusy = false;
+    }
   }
 
   @Builder
@@ -275,7 +291,7 @@ struct Index {
           .selectedColor($r('app.color.status_running'))
           .switchPointColor(Color.White)
           .size({ width: 48, height: 26 })
-          .onChange(() => this.toggleProxy())
+          .onChange((on: boolean) => this.toggleProxy(on))
       }
       .width('100%')
 
@@ -431,8 +447,12 @@ struct Index {
       .backgroundColor($r('app.color.page_bg'))
       .padding({ top: this.decorTopInset })
 
-      // 右下角托盘
-      StatusBar()
+      // 右下角托盘：运行态来自页面状态，启停/配置动作交回页面统一处理
+      StatusBar({
+        isRunning: this.proxyRunning,
+        onToggle: () => this.toggleProxy(),
+        onOpenSettings: () => { this.showSettings = true; },
+      })
 
       // 添加供应商
       if (this.showAdd) {

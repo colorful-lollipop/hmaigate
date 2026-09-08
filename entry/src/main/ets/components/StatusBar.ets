@@ -12,18 +12,17 @@ const TAG = 'StatusBar';
 
 /**
  * 状态栏组件
+ * isRunning 由宿主页面（Index）单向传入；启停与打开配置经回调交回页面处理
+ * （视图不直接触碰 service，数据流见 AGENTS.md）。
  */
 @Component
 export struct StatusBar {
-  @State isRunning: boolean = false;
+  @Prop isRunning: boolean = false;
   @State showMenu: boolean = false;
+  onToggle: () => void = () => {};
+  onOpenSettings: () => void = () => {};
   // M5 换肤：胶囊上的「AI」字样用强调色（状态指示灯保持语义色不变），默认值走 types/Skin 常量兜底
   @StorageLink('skinAccent') skinAccent: string = DEFAULT_ACCENT;
-
-  aboutToAppear(): void {
-    // 初始化状态
-    // TODO: 从 ProxyService 获取状态
-  }
 
   build() {
     Stack({ alignContent: Alignment.BottomEnd }) {
@@ -49,6 +48,7 @@ export struct StatusBar {
           .hoverEffect(HoverEffect.Highlight)
           .onClick(() => {
             this.showMenu = false;
+            this.onToggle();
           })
 
           Divider()
@@ -75,6 +75,7 @@ export struct StatusBar {
           .hoverEffect(HoverEffect.Highlight)
           .onClick(() => {
             this.showMenu = false;
+            this.onOpenSettings();
           })
         }
         .width(180)

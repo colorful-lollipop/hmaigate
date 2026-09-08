@@ -10,6 +10,9 @@
 - **转发头必须剥 `Accept-Encoding`**：本构建未编 zlib，上游回 gzip 响应时 `content_receiver` 会以 `UnsupportedContentEncoding` 失败；剥掉即「只收未压缩响应」。
 - **chunked provider 场景响应头要剥 `Content-Length`/`Transfer-Encoding`/`Connection`**：httplib 对 `set_chunked_content_provider` 自动用 chunked 帧并自己写 `Connection`；保留上游旧值会与本地帧冲突。`Content-Type` 单独经 `set_chunked_content_provider` 的参数写入（`set_header` 是 append 语义，重复写入会出现两个头）。
 - **`Server::listen()` 阻塞**（bind + accept 循环 + 线程池 shutdown 全在调用线程内）：必须放 worker 线程跑，`Start` 用 `wait_until_ready()` 等 bind 结果、`is_running()` 判成败。
+- **httplib 默认开 `SO_REUSEPORT`**（`create_server_socket`，Linux 下可用即启用）：两个 Server 实例能**同时** LISTEN 同一地址端口，内核对新连接做负载均衡。一旦 `Start` 的防重入闸门失效（曾因 `running_` 忘了在 bind 成功后置位：UI 恒显未启动、`Stop` 因 `exchange(false)` 失败而空转、重复 Start 各起一个 Server），就会出现"请求时而 404、时而正常、日志全无"的诡异组合——泄漏的 socket 上连接被分给已析构/无循环的实例。教训：listen 类启动函数的运行标志必须在成功路径同步置位，`Stop`/`Snapshot`/防重入全押在它上面。
+- **`Content-Type` 必须在响应头剥离时单独捕获**：剥离是为了防 `set_chunked_content_provider` 重复写入，但上游头名大小写不定（Node 系全小写 `content-type`），事后从复制表按 `"Content-Type"` 查是查不到的——只能发布头时原样取走存入上下文，否则所有响应都落到 `application/octet-stream` 兜底（SSE 客户端靠这个头识别事件流，会直接解析失败）。
+- **`ResponseScanner::Feed` 只在事件边界释放字节，pump 收尾必须 `Flush()`**：非 SSE 响应（JSON 错误体、普通应答）没有 `\n\n` 边界，body 会整体滞留在扫描器缓冲里——`send` 返回后若直接 `queue.Close()`，这些 body 被整段吞掉，客户端只见 200/4xx + 空 body（SSE 流因为事件有边界恰好能透传，极易漏测）。判定手法：同一请求直连上游有 body、经网关没有，且 200 与 4xx 都空。
 - **provider 资源释放器是收尾点**：`Response` 析构必调 `content_provider_resource_releaser(success)`——在此 `CloseAndDrop` 队列 + `Client::stop()` + 注销在途表，保证 pump（detach 线程，shared_ptr 保活）及时退出。
 - **历史包袱（mongoose 时代，供考古）**：`MG_EV_READ` 的 `ev_data` 是 `long*`、转发后要 `mg_iobuf_del` 排空、对端关闭标记 `is_draining` 冲发送缓冲——这些坑已随 mongoose 移除不复存在。
 - **std::regex 中文坑**（`security_detector.cpp`）：std::regex 按字节匹配，可选中文必须写 `(的)?` 分组，`的?` 永不匹配。
@@ -17,6 +20,7 @@
 ## ArkTS / ArkUI
 
 - **ArkUI `Toggle`(Switch) 无默认宽度**：`Toggle({type: ToggleType.Switch, isOn})` 渲染出来约 0 宽（看着"太窄"），须 `.size({width, height})` 按约 2:1 设置（如 `{width:52, height:28}`）。旋钮可见，容易漏看。
+- **`Toggle.onChange` 在程序化 isOn 回写时同样触发**：`isOn` 绑定 `@State` 时，启动请求在途、框架把开关同步回 OFF 的那次回写也会发 `onChange`——不去抖就是"点一次、启动两次"（连点/误停/重复计数）。`onChange` 回调带上值与端态比较（值 === 当前状态直接忽略）+ 操作进行中标志，双保险（见 `Index.ets` `toggleProxy`）。
 - **@Builder 参数传递坑**：基本类型参数按值捕获不随状态刷新（统计格曾因此显示陈旧数字）——需要联动刷新的参数必须包成对象字面量按引用传（如 `StatCell($$: StatCellData)`）。
 - **全局 animateTo 已 deprecated**：用 `this.getUIContext().animateTo`。
 

@@ -122,6 +122,10 @@ struct RelayContext {
   std::atomic<bool> headReady{false};
   int upstreamStatus = -1;
   Headers upstreamHeaders;
+  // Content-Type 不进 upstreamHeaders（会与 set_chunked_content_provider 的
+  // 传参重复），在头剥离时单独捕获。上游头名大小写不定（Node 系全小写），
+  // 必须在发布点原样取走，事后无法从复制表找回。
+  std::string upstreamContentType;
 
   bool relayed = false;          // 是否已回传过响应字节（success 计数，只计一次）
   bool securityBlocked = false;  // ResponseScanner 命中阻断（泵线程写）
@@ -248,6 +252,9 @@ void PumpUpstream(const std::shared_ptr<RelayContext>& ctx, ProxyServer* self,
     ctx->upstreamStatus = rs.status;
     Headers picked;
     for (const auto& h : rs.headers) {
+      if (ToLower(h.first) == "content-type") {
+        ctx->upstreamContentType = h.second;
+      }
       if (!IsSkippedResponseHeader(ToLower(h.first))) {
         picked.emplace(h.first, h.second);
       }
@@ -300,6 +307,9 @@ void PumpUpstream(const std::shared_ptr<RelayContext>& ctx, ProxyServer* self,
     ctx->upstreamStatus = ok ? res.status : -1;
     Headers picked;
     for (const auto& h : res.headers) {
+      if (ToLower(h.first) == "content-type") {
+        ctx->upstreamContentType = h.second;
+      }
       if (!IsSkippedResponseHeader(ToLower(h.first))) {
         picked.emplace(h.first, h.second);
       }
@@ -315,6 +325,28 @@ void PumpUpstream(const std::shared_ptr<RelayContext>& ctx, ProxyServer* self,
                "upstream error: " + std::string(httplib::to_string(err)));
     PROXY_LOG("upstream error: %{public}s", httplib::to_string(err).c_str());
   }
+
+  // 排出扫描器残留。Feed 只在事件边界释放字节，非 SSE 响应（JSON 错误体、
+  // 普通应答）以及流的不完整尾部会整体滞留缓冲——必须 Flush 扫描后放行，
+  // 否则这些 body 会被 queue.Close() 整段吞掉（客户端只见空 body）。
+  if (ctx->scanner != nullptr && !ctx->securityBlocked && !ctx->failedNoted) {
+    ScanOutcome out = ctx->scanner->Flush();
+    if (!out.release.empty()) {
+      if (ctx->queue.Push(std::move(out.release))) {
+        NoteRelayed(ctx.get(), self);
+      }
+    }
+    if (out.blocked && !ctx->securityBlocked) {
+      ctx->securityBlocked = true;
+      if (self != nullptr) {
+        self->IncBlocked();
+        self->SetLastError("response blocked: " + out.reason);
+      }
+      PROXY_LOG("response blocked: %{public}s", out.reason.c_str());
+      ctx->queue.Push(MakeBlockEvent(out.reason));
+    }
+  }
+
   ctx->queue.Close();  // 无论成败，泵到此为止；provider 端排空后自然结束
 }
 
@@ -412,12 +444,11 @@ void HandleProxyRequest(ProxyServer* self, const Request& req, Response& res) {
   for (const auto& h : ctx->upstreamHeaders) {
     res.headers.emplace(h.first, h.second);
   }
-  // Content-Type 未随头复制（防 set_chunked_content_provider 重复写入），
-  // 此处显式传入；缺失时给通用兜底。
-  std::string contentType = "application/octet-stream";
-  if (ctx->upstreamHeaders.find("Content-Type") != ctx->upstreamHeaders.end()) {
-    contentType = ctx->upstreamHeaders.find("Content-Type")->second;
-  }
+  // Content-Type 在头剥离时由发布点单独捕获（上游头名大小写不定，事后从复制
+  // 表查不到）；缺失时给通用兜底。
+  std::string contentType =
+      ctx->upstreamContentType.empty() ? "application/octet-stream"
+                                       : ctx->upstreamContentType;
 
   // chunked provider：从队列排空回传。std::function 要求可拷贝 → ctx 经
   // shared_ptr 值捕获；self 是静态单例，裸指针捕获安全。
@@ -506,6 +537,9 @@ bool ProxyServer::Start(const std::string& host, uint16_t port) {
     SetLastError("listen failed: " + host + ":" + std::to_string(port));
     return false;
   }
+  // bind 成功才算运行：Snapshot/Stop/防重入都以 running_ 为准（迁移 httplib 时
+  // 曾遗漏置位，导致 UI 永远显示未启动、Stop 空转、重复 Start 泄漏监听端口）。
+  running_.store(true);
   return true;
 }
 
